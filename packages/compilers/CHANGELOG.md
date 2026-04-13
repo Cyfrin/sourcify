@@ -1,4 +1,14 @@
+## @ethereum-sourcify/compilers@1.1.0 - 2026-03-30
 
+- feat: add Fe language support for smart contract verification (#2692)
+
+## @ethereum-sourcify/compilers@1.0.19 - 2026-03-17
+
+- Always run solcjs in a worker (#2652)
+
+## @ethereum-sourcify/compilers@1.0.18 - 2026-03-02
+
+- update dependencies
 
 ## @ethereum-sourcify/compilers@1.0.17 - 2026-01-20
 

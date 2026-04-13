@@ -2,7 +2,10 @@ import type { AbstractCompilation } from '../Compilation/AbstractCompilation';
 import { logDebug, logInfo, logWarn } from '../logger';
 import type { SourcifyChain } from '../SourcifyChain/SourcifyChain';
 import { lt } from 'semver';
-import type { SolidityDecodedObject } from '@ethereum-sourcify/bytecode-utils';
+import type {
+  SolidityDecodedObject,
+  VyperDecodedObject,
+} from '@ethereum-sourcify/bytecode-utils';
 import {
   splitAuxdata,
   AuxdataStyle,
@@ -13,6 +16,7 @@ import type {
   ISolidityCompiler,
   StringMap,
 } from '../Compilation/CompilationTypes';
+import semver from 'semver';
 
 import type { Transformation, TransformationValues } from './Transformations';
 import {
@@ -32,10 +36,46 @@ import type {
   VyperOutputContract,
   ImmutableReferences,
   SolidityOutputContract,
+  FeOutputContract,
   SoliditySettings,
   Metadata,
 } from '@ethereum-sourcify/compilers-types';
 import { SolidityMetadataContract } from '../Validation/SolidityMetadataContract';
+import type { VyperCompilation } from '../Compilation/VyperCompilation';
+
+function auxdataLacksMetadataOrIntegrityHash(
+  auxdata: CompiledContractCborAuxdata[string],
+  compilation: AbstractCompilation,
+): boolean {
+  try {
+    if (
+      compilation.auxdataStyle === AuxdataStyle.SOLIDITY &&
+      semver.gte(compilation.compilerVersion, '0.4.7')
+    ) {
+      const { ipfs, bzzr0, bzzr1 } = decodeBytecode(
+        auxdata.value,
+        compilation.auxdataStyle,
+      ) as SolidityDecodedObject;
+      return ipfs === undefined && bzzr0 === undefined && bzzr1 === undefined;
+    } else if (
+      compilation.auxdataStyle === AuxdataStyle.VYPER &&
+      semver.gte(
+        (compilation as VyperCompilation).compilerVersionCompatibleWithSemver,
+        '0.4.1',
+      )
+    ) {
+      const { integrity } = decodeBytecode(
+        auxdata.value,
+        compilation.auxdataStyle,
+      ) as VyperDecodedObject;
+      return integrity === undefined;
+    } else {
+      return true;
+    }
+  } catch {
+    return true;
+  }
+}
 
 export class Verification {
   // Bytecodes
@@ -268,6 +308,9 @@ export class Verification {
   }
 
   private async checkForPerfectMetadata(forceEmscripten: boolean) {
+    if (this.compilation.metadata === undefined) {
+      return;
+    }
     try {
       const [, onchainAuxdata] = splitAuxdata(
         this.onchainRuntimeBytecode,
@@ -396,23 +439,13 @@ export class Verification {
       : populatedRecompiledBytecode === onchainBytecode;
 
     if (doBytecodesMatch) {
-      // If there is perfect match but auxdata doesn't contain any metadata hash, return partial match
+      // If there is perfect match but auxdata doesn't contain any metadata / integrity hash, return partial match
       if (
         !cborAuxdata ||
         Object.keys(cborAuxdata).length === 0 ||
-        Object.values(cborAuxdata).some((cborAuxdata) => {
-          try {
-            const { ipfs, bzzr0, bzzr1 } = decodeBytecode(
-              cborAuxdata.value,
-              this.compilation.auxdataStyle,
-            ) as SolidityDecodedObject;
-            return (
-              ipfs === undefined && bzzr0 === undefined && bzzr1 === undefined
-            );
-          } catch {
-            return true;
-          }
-        })
+        Object.values(cborAuxdata).some((auxdata) =>
+          auxdataLacksMetadataOrIntegrityHash(auxdata, this.compilation),
+        )
       ) {
         result.match = 'partial';
       } else {
@@ -609,19 +642,30 @@ export class Verification {
 
     let compilerOutputSources: Record<string, { id: number }> | undefined;
     if (this.compilation.compilerOutput?.sources) {
-      compilerOutputSources = {};
-      for (const source of Object.keys(
-        this.compilation.compilerOutput.sources,
-      )) {
-        compilerOutputSources[source] = {
-          id: this.compilation.compilerOutput.sources[source].id,
-        };
+      if (
+        this.compilation.language === 'Solidity' &&
+        semver.lt(this.compilation.compilerVersion, '0.3.6')
+      ) {
+        // In Solidity versions < 0.3.6 there is no id in sources
+        compilerOutputSources = undefined;
+      } else {
+        compilerOutputSources = {};
+        for (const source of Object.keys(
+          this.compilation.compilerOutput.sources,
+        )) {
+          const id = this.compilation.compilerOutput.sources[source].id;
+          compilerOutputSources[source] = {
+            // In older solidity versions, source ids were strings, so we parse them to numbers
+            id: typeof id === 'number' ? id : parseInt(id, 10),
+          };
+        }
       }
     }
 
     let contractCompilerOutput:
       | SolidityOutputContract
       | VyperOutputContract
+      | FeOutputContract
       | undefined;
     try {
       contractCompilerOutput = this.compilation.contractCompilerOutput;
@@ -688,11 +732,14 @@ export class Verification {
         sources: this.compilation.sources,
         compilerOutput: { sources: compilerOutputSources },
         contractCompilerOutput: {
-          abi: contractCompilerOutput?.abi,
+          abi: contractCompilerOutput?.abi ?? undefined,
           userdoc: contractCompilerOutput?.userdoc,
           devdoc: contractCompilerOutput?.devdoc,
           storageLayout: (contractCompilerOutput as SolidityOutputContract)
             ?.storageLayout,
+          transientStorageLayout: (
+            contractCompilerOutput as SolidityOutputContract
+          )?.transientStorageLayout,
           evm: {
             bytecode: {
               sourceMap: (contractCompilerOutput as SolidityOutputContract)?.evm

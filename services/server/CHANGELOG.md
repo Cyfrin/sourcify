@@ -2,12 +2,55 @@
 
 All notable changes to this project will be documented in this file.
 
+## sourcify-server@3.12.1 - 2026-03-31
+
+- Fix Fe support via updating the docker image build (#2718 + #2719)
+
+## sourcify-server@3.12.0 - 2026-03-30
+
+- feat: add Fe language support for smart contract verification (#2692)
+- feat: add NodeReal nr_getContractCreationTransaction for BSC mainnet (#2702)
+- fix: throw on Etherscan NOTOK response and fix misleading creator tx log (#2700)
+- Update dependencies
+- Add chains:
+  - RISE Testnet (11155931)
+
+## sourcify-server@3.11.0 - 2026-03-17
+
+- Support all Solidity versions >= 0.1.3 and drop the metadata dependency (#2652)
+- Add index on contract_deployments.chain_id for /v2/contracts pagination (#2684)
+- Add deprecation warning field and Warning HTTP header to legacy v1 API responses (#2678)
+- Add chains:
+  - Flow EVM Mainnet (747)
+  - Flow EVM Testnet (545)
+  - RISE (4153)
+  - Reactive Network Lasna (5318007)
+  - Integralayer (26217)
+
+## sourcify-server@3.10.0 - 2026-03-02
+
+- Support verification when cbor auxdata lengths differ between onchain and recompilation (#2619)
+- Remove /session API endpoints (#2671)
+- Update error handling to return 400 for unsupported chains (#2615)
+- Store failed verification inputs in a S3 bucket for debugging purposes (#2613)
+- Add API terms (#2651)
+- Fix chain explorer configurations for contract creation fetching (#2626)
+- New chains:
+  - LuxePorts MainNet (1122)
+  - Citrea Mainnet (4114)
+  - HPP Mainnet (190415)
+  - HPP Sepolia Testnet (181228)
+  - Neo X Mainnet (47763)
+  - Neo X Testnet T4 (12227332)
+  - Ronin Saigon Testnet (202601)
+  - Tempo Mainnet (4217)
+- Arbitrum Nova (42170): Replace contract creation fetching via Etherscan with Blockscout (#2618)
+
 ## sourcify-server@3.9.1 - 2026-01-20
 
 - Retry external verification if contract is not indexed yet (#2588)
 - Improve log levels (#2601)
 - Update dependencies
-
 
 ## sourcify-server@3.9.0 - 2026-01-07
 
@@ -21,7 +64,6 @@ All notable changes to this project will be documented in this file.
 - Add Sei Network specific Etherscan API key variable (#2547)
 - Disable chains which fail CI tests (#2557)
 
-
 ## sourcify-server@3.8.1 - 2025-12-15
 
 - Support new "already verified" message from Etherscan (#2520)
@@ -34,9 +76,8 @@ All notable changes to this project will be documented in this file.
 - Update dependencies
 - Fix prettier
 - Add chains:
-    - 1329 Sei network
-    - 42429 Tempo testnet
-
+  - 1329 Sei network
+  - 42429 Tempo testnet
 
 ## sourcify-server@3.8.0 - 2025-11-19
 
@@ -65,7 +106,7 @@ All notable changes to this project will be documented in this file.
   - sends verification requests to Etherscan, Blockscout and/or Routescan after verifying on Sourcify
 - Add SSL support for SOURCIFY_POSTGRES (#2458)
 - Add redirects from server to repo and verify UI (#2468)
-- Remove the signature database tag from server openapi.yaml (#2451) 
+- Remove the signature database tag from server openapi.yaml (#2451)
 - add chains:
   - 1868 Soneium
   - 480 WorldChain

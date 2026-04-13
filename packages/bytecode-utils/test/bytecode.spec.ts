@@ -45,6 +45,18 @@ describe('bytecode utils', function () {
     chai.expect(`${execution}`).to.equal(BYTECODE_WITHOUTAUXDATA);
   });
 
+  it('return the full bytecode with no auxdata for Fe contracts', () => {
+    // Use an existing bytecode (e.g. BYTECODE_IPFS) to verify Fe path
+    // always returns the full bytecode unchanged, regardless of content
+    const [execution, auxdata, length] = splitAuxdata(
+      BYTECODE_IPFS,
+      AuxdataStyle.FE,
+    );
+    chai.expect(auxdata).to.be.undefined;
+    chai.expect(length).to.be.undefined;
+    chai.expect(execution).to.equal(BYTECODE_IPFS);
+  });
+
   it('split succesfully bytecode into execution bytecode and auxadata', () => {
     const [execution, auxadata, length] = splitAuxdata(
       BYTECODE_IPFS,
@@ -121,6 +133,36 @@ describe('bytecode utils', function () {
       .to.deep.equal({
         vyperVersion: '0.3.4',
       });
+  });
+
+  it('split Vyper bytecode (>= 0.4.1) into execution bytecode and auxdata', () => {
+    const [execution, auxdata, length] = splitAuxdata(
+      BYTECODE_VYPER_INTEGRITY,
+      AuxdataStyle.VYPER,
+    );
+    chai.expect(auxdata).to.not.be.undefined;
+    chai.expect(length).to.equal('0034');
+    chai
+      .expect(auxdata)
+      .to.equal(
+        '85582005b754c58b2e540a14aba6f16717ab2c30edc74936c8985d77b152cd97887e07188f8000a165767970657283000401',
+      );
+    chai
+      .expect(`${execution}${auxdata}${length}`)
+      .to.equal(BYTECODE_VYPER_INTEGRITY);
+  });
+
+  it('split Vyper bytecode (>= 0.3.10) into execution bytecode and auxdata', () => {
+    const [execution, auxdata, length] = splitAuxdata(
+      BYTECODE_VYPER_NO_INTEGRITY,
+      AuxdataStyle.VYPER,
+    );
+    chai.expect(auxdata).to.not.be.undefined;
+    chai.expect(length).to.equal('0012');
+    chai.expect(auxdata).to.equal('84188f8000a16576797065728300030a');
+    chai
+      .expect(`${execution}${auxdata}${length}`)
+      .to.equal(BYTECODE_VYPER_NO_INTEGRITY);
   });
 
   it('bytecode decode should fail gracefully when input is undefined', () => {

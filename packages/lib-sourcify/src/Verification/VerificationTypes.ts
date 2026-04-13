@@ -6,16 +6,16 @@ import type {
   StringMap,
 } from '../Compilation/CompilationTypes';
 import type {
+  FeSettings,
   ImmutableReferences,
   SoliditySettings,
   StorageLayout,
+  TransientStorageLayout,
   Devdoc,
   LinkReferences,
   Metadata,
   Userdoc,
   VyperSettings,
-  SolidityOutputSource,
-  VyperOutputSource,
   VyperSourceMap,
 } from '@ethereum-sourcify/compilers-types';
 import type { SourcifyLibErrorParameters } from '../SourcifyLibError';
@@ -103,16 +103,16 @@ export interface VerificationExport {
     sources: StringMap;
     compilerOutput: {
       // The export should not include the AST object to reduce the size
-      sources?: Record<
-        string,
-        Pick<SolidityOutputSource, 'id'> | Pick<VyperOutputSource, 'id'>
-      >;
+      // In older solidity versions, solcjs returns the id as a string,
+      // but we force it to be a number in the compilation export
+      sources?: Record<string, { id: number }>;
     };
     contractCompilerOutput: {
       abi?: JsonFragment[];
       userdoc?: Userdoc;
       devdoc?: Devdoc;
       storageLayout?: StorageLayout;
+      transientStorageLayout?: TransientStorageLayout;
       evm: {
         bytecode: {
           sourceMap?: string | VyperSourceMap;
@@ -131,7 +131,7 @@ export interface VerificationExport {
     immutableReferences?: ImmutableReferences;
     metadata?: Metadata;
     jsonInput: {
-      settings: SoliditySettings | VyperSettings;
+      settings: SoliditySettings | VyperSettings | FeSettings;
     };
     compilationTime?: number;
   };

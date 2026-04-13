@@ -1,4 +1,14 @@
+## sourcify-4byte@1.1.10 - 2026-03-30
 
+- Update dependencies
+
+## sourcify-4byte@1.1.9 - 2026-03-17
+
+- update dependencies
+
+## sourcify-4byte@1.1.8 - 2026-03-02
+
+- update dependencies
 
 ## sourcify-4byte@1.1.7 - 2026-01-20
 

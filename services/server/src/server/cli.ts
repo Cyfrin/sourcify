@@ -10,10 +10,6 @@ process.env["NODE_CONFIG_DIR"] = path.resolve(__dirname, "..", "config");
 import config from "config";
 import swaggerUi from "swagger-ui-express";
 import yamljs from "yamljs";
-import expressSession from "express-session";
-import createMemoryStore from "memorystore";
-import { Pool } from "pg";
-import genFunc from "connect-pg-simple";
 
 // local imports
 import logger from "../common/logger";
@@ -21,8 +17,8 @@ import { sourcifyChainsMap } from "../sourcify-chains";
 import type { LibSourcifyConfig } from "./server";
 import { Server } from "./server";
 import { SolcLocal } from "./services/compiler/local/SolcLocal";
-import type session from "express-session";
 import { VyperLocal } from "./services/compiler/local/VyperLocal";
+import { FeLocal } from "./services/compiler/local/FeLocal";
 
 export const getEtherscanApiKeyForEachChain = (): Record<string, string> =>
   Object.entries(sourcifyChainsMap).reduce<Record<string, string>>(
@@ -80,6 +76,11 @@ const vyperRepoPath =
   (config.get("vyperRepo") as string) || path.join("/tmp", "vyper-repo");
 export const vyper = new VyperLocal(vyperRepoPath);
 
+logger.info("Using local Fe compiler");
+const feRepoPath =
+  (config.get("feRepo") as string) || path.join("/tmp", "fe-repo");
+export const fe = new FeLocal(feRepoPath);
+
 // To print regexes in the config object logs below
 Object.defineProperty(RegExp.prototype, "toJSON", {
   value: RegExp.prototype.toString,
@@ -95,10 +96,10 @@ const server = new Server(
     corsAllowedOrigins: config.get("corsAllowedOrigins"),
     solc,
     vyper,
+    fe,
     chains: sourcifyChainsMap,
     verifyDeprecated: config.get("verifyDeprecated"),
     replaceContract: config.get("replaceContract"),
-    sessionOptions: getSessionOptions(),
     sourcifyPrivateToken: process.env.SOURCIFY_PRIVATE_TOKEN,
     logLevel,
     libSourcifyConfig,
@@ -111,6 +112,7 @@ const server = new Server(
     solcRepoPath,
     solJsonRepoPath,
     vyperRepoPath,
+    feRepoPath,
     workerIdleTimeout: process.env.WORKER_IDLE_TIMEOUT
       ? parseInt(process.env.WORKER_IDLE_TIMEOUT)
       : undefined,
@@ -229,105 +231,3 @@ server.services.init().then(() => {
       });
     });
 });
-
-function initMemoryStore() {
-  const MemoryStore = createMemoryStore(expressSession);
-
-  logger.warn(
-    "Using memory based session. Don't use memory session in production!",
-  );
-  return new MemoryStore({
-    checkPeriod: config.get("session.maxAge"),
-  });
-}
-
-function initDatabaseStore() {
-  const pool = new Pool({
-    host: process.env.SOURCIFY_POSTGRES_HOST,
-    database: process.env.SOURCIFY_POSTGRES_DB,
-    user: process.env.SOURCIFY_POSTGRES_USER,
-    password: process.env.SOURCIFY_POSTGRES_PASSWORD,
-    port: parseInt(process.env.SOURCIFY_POSTGRES_PORT || "5432"),
-    ssl:
-      process.env.SOURCIFY_POSTGRES_SSL === "true"
-        ? {
-            rejectUnauthorized:
-              process.env.SOURCIFY_POSTGRES_SSL_REJECT_UNAUTHORIZED === "true",
-          }
-        : undefined,
-  });
-
-  // This listener is necessary otherwise the sourcify process crashes if the database is closed
-  pool.prependListener("error", (e) => {
-    logger.error("Database connection lost for session pool", {
-      error: e,
-    });
-    throw new Error("Database connection lost for session pool");
-  });
-
-  const PostgresqlStore = genFunc(expressSession);
-
-  logger.info("Using database based session");
-  return new PostgresqlStore({
-    pool: pool,
-    // Pruning expired sessions every 12 hours
-    pruneSessionInterval: 12 * 60 * 60,
-    schemaName: process.env.SOURCIFY_POSTGRES_SCHEMA as string,
-  });
-}
-
-function getSessionStore() {
-  const sessionStoreType = config.get("session.storeType");
-
-  switch (sessionStoreType) {
-    case "database": {
-      if (
-        process.env.SOURCIFY_POSTGRES_HOST &&
-        process.env.SOURCIFY_POSTGRES_DB &&
-        process.env.SOURCIFY_POSTGRES_USER &&
-        process.env.SOURCIFY_POSTGRES_PASSWORD
-      ) {
-        return initDatabaseStore();
-      } else {
-        logger.error(
-          "Database session enabled in config but the environment variables are not specified",
-        );
-        throw new Error(
-          "Database session enabled in config but the environment variables are not specified",
-        );
-      }
-    }
-
-    case "memory": {
-      return initMemoryStore();
-    }
-    default:
-      // Throw an error if an unrecognized session storage type is selected
-      throw new Error(
-        `Selected session storage type '${sessionStoreType}' doesn't exist.`,
-      );
-  }
-}
-
-export function getSessionOptions(): session.SessionOptions {
-  if (config.get("session.secret") === "CHANGE_ME") {
-    const msg =
-      "The session secret is not set, please set it in the config file";
-    process.env.NODE_ENV === "production"
-      ? logger.error(msg)
-      : logger.warn(msg);
-  }
-  return {
-    secret: config.get("session.secret"),
-    name: "sourcify_vid",
-    rolling: true,
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      maxAge: config.get("session.maxAge"),
-      secure: config.get("session.secure"),
-      sameSite: "lax",
-    },
-    store: getSessionStore(),
-  };
-}

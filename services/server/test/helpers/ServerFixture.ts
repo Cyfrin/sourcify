@@ -6,12 +6,11 @@ import config from "config";
 import { sourcifyChainsMap } from "../../src/sourcify-chains";
 import type { StorageIdentifiers } from "../../src/server/services/storageServices/identifiers";
 import { RWStorageIdentifiers } from "../../src/server/services/storageServices/identifiers";
-import { Pool } from "pg";
+import type { Pool } from "pg";
 import type { SourcifyDatabaseService } from "../../src/server/services/storageServices/SourcifyDatabaseService";
-import genFunc from "connect-pg-simple";
-import expressSession from "express-session";
 import { SolcLocal } from "../../src/server/services/compiler/local/SolcLocal";
 import { VyperLocal } from "../../src/server/services/compiler/local/VyperLocal";
+import { FeLocal } from "../../src/server/services/compiler/local/FeLocal";
 import path from "path";
 import { testS3Bucket, testS3Path } from "./S3ClientMock";
 import type { SourcifyChainMap } from "@ethereum-sourcify/lib-sourcify";
@@ -75,16 +74,6 @@ export class ServerFixture {
       ) {
         throw new Error("Not all required environment variables set");
       }
-      const PostgresqlStore = genFunc(expressSession);
-      const postgresSessionStore = new PostgresqlStore({
-        pool: new Pool({
-          host: process.env.SOURCIFY_POSTGRES_HOST,
-          database: process.env.SOURCIFY_POSTGRES_DB,
-          user: process.env.SOURCIFY_POSTGRES_USER,
-          password: process.env.SOURCIFY_POSTGRES_PASSWORD,
-          port: parseInt(process.env.SOURCIFY_POSTGRES_PORT),
-        }),
-      });
 
       const serverOptions: ServerOptions = {
         port: fixtureOptions_?.port || config.get<number>("server.port"),
@@ -93,21 +82,9 @@ export class ServerFixture {
         chains: fixtureOptions_?.chains || sourcifyChainsMap,
         solc: new SolcLocal(config.get("solcRepo"), config.get("solJsonRepo")),
         vyper: new VyperLocal(config.get("vyperRepo")),
+        fe: new FeLocal(config.get("feRepo")),
         verifyDeprecated: true,
         replaceContract: true,
-        sessionOptions: {
-          secret: config.get("session.secret"),
-          name: "sourcify_vid",
-          rolling: true,
-          resave: false,
-          saveUninitialized: true,
-          cookie: {
-            maxAge: config.get("session.maxAge"),
-            secure: config.get("session.secure"),
-            sameSite: "lax",
-          },
-          store: postgresSessionStore,
-        },
         sourcifyPrivateToken: "sourcify-test-token",
         logLevel: "debug",
       };
@@ -119,6 +96,7 @@ export class ServerFixture {
           solcRepoPath: config.get("solcRepo"),
           solJsonRepoPath: config.get("solJsonRepo"),
           vyperRepoPath: config.get("vyperRepo"),
+          feRepoPath: config.get("feRepo"),
         },
         {
           serverUrl: config.get("serverUrl"),

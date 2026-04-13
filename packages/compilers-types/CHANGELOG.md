@@ -1,4 +1,15 @@
+## @ethereum-sourcify/compilers-types@1.1.0 - 2026-03-30
 
+- feat: add Fe language support for smart contract verification (#2692)
+
+## @ethereum-sourcify/compilers-types@1.0.13 - 2026-03-17
+
+- Add TransientStorageLayout type (#2689)
+- Refinements to SolidityOutputContract for supporting all Solidity versions (#2652)
+
+## @ethereum-sourcify/compilers-types@1.0.12 - 2026-03-02
+
+- improved types for StorageLayout and VyperSourceMap
 
 ## @ethereum-sourcify/compilers-types@1.0.11 - 2026-01-07
 

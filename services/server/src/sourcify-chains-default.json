@@ -124,6 +124,15 @@
       }
     ]
   },
+  "8150": {
+    "sourcifyName": "Alpen Testnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://explorer.testnet.alpenlabs.io/"
+      }
+    }
+  },
   "17000": {
     "sourcifyName": "Ethereum Holesky Testnet",
     "supported": false
@@ -265,6 +274,9 @@
       "apiKeyEnvName": "ETHERSCAN_API_KEY_BSC"
     },
     "fetchContractCreationTxUsing": {
+      "nodeRealApi": {
+        "url": "https://bsc-mainnet.nodereal.io/v1/${API_KEY}"
+      },
       "etherscanApi": true
     },
     "rpc": [
@@ -696,6 +708,24 @@
         "traceSupport": "trace_transaction"
       }
     ]
+  },
+  "4153": {
+    "sourcifyName": "RISE",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://explorer.risechain.com/"
+      }
+    }
+  },
+  "11155931": {
+    "sourcifyName": "RISE Testnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://explorer.testnet.riselabs.xyz/"
+      }
+    }
   },
   "28": {
     "sourcifyName": "Boba Network Rinkeby Testnet",
@@ -2260,6 +2290,16 @@
       }
     }
   },
+  "4217": {
+    "sourcifyName": "Tempo Mainnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://explorer.tempo.xyz/"
+      }
+    },
+    "rpc": ["https://tempo-mainnet.drpc.org"]
+  },
   "42429": {
     "sourcifyName": "Tempo Testnet (Andantino)",
     "supported": true,
@@ -2351,6 +2391,16 @@
       }
     }
   },
+  "5318007": {
+    "sourcifyName": "Reactive Network Lasna",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "etherscanApi": false,
+      "blockscoutApi": {
+        "url": "https://lasna-api.reactscan.net"
+      }
+    }
+  },
   "5042002": {
     "sourcifyName": "ARC-testnet",
     "supported": true,
@@ -2409,7 +2459,7 @@
       }
     }
   },
-  
+
   "1122": {
     "sourcifyName": "LuxePorts MainNet",
     "supported": true
@@ -2478,5 +2528,44 @@
         "url": "https://xt4scan.ngd.network"
       }
     }
+  },
+  "26217": {
+    "sourcifyName": "Integralayer",
+    "supported": true,
+    "rpc": ["https://evm.integralayer.com"],
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://blockscout.integralayer.com"
+      }
+    }
+  },
+  "202601": {
+    "sourcifyName": "Ronin Saigon Testnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://saigon-explorer.roninchain.com"
+      }
+    }
+  },
+  "747": {
+    "sourcifyName": "Flow EVM Mainnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://evm.flow.com/"
+      }
+    },
+    "rpc": ["https://mainnet.evm.nodes.onflow.org"]
+  },
+  "545": {
+    "sourcifyName": "Flow EVM Testnet",
+    "supported": true,
+    "fetchContractCreationTxUsing": {
+      "blockscoutApi": {
+        "url": "https://testnet.evm.flow.com/"
+      }
+    },
+    "rpc": ["https://testnet.evm.nodes.onflow.org"]
   }
 }
